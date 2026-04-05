@@ -22,10 +22,11 @@ class PhoneValidationRequest(BaseModel):
 
 
 @router.get("/checkouts", summary="List recent abandoned checkouts — find tokens here")
-async def list_checkouts(limit: int = 10):
-    """Returns checkout token, customer name, phone, and total for each abandoned checkout."""
+async def list_checkouts(limit: int = 50, days_back: int = 2):
+    """Returns checkout token, customer name, phone, and total for each abandoned checkout.
+    Defaults to the last 2 days. Pass days_back=N to override."""
     svc = ShopifyService()
-    checkouts = await svc.list_abandoned_checkouts(limit)
+    checkouts = await svc.list_abandoned_checkouts(limit=limit, days_back=days_back)
     return [
         {
             "token": c.get("token"),

@@ -65,14 +65,14 @@ Data flows: Shopify webhook → FastAPI (detect abandonment, schedule call) → 
 
 | # | Task | Details |
 |---|------|---------|
-| 2.1 | LangGraph state machine | Define the conversation graph: Greeting → Intent Detection → Objection Handling → Discount Offer → Close. Each node is a distinct state. |
-| 2.2 | Prompt engineering | Write the system prompt grounding the agent in cart data. Agent must only reference actual products in the cart. It must never hallucinate product details. |
-| 2.3 | Tool: Shopify cart lookup | LangGraph tool that fetches cart contents for the current call session. |
-| 2.4 | Tool: Generate discount | LangGraph tool that creates a discount code and returns it to the agent. |
-| 2.5 | Tool: Send SMS | LangGraph tool that sends the cart link + discount code to the customer via SMS (Twilio SMS or Vapi). |
-| 2.6 | Voicemail message template | A short, fixed voicemail script: "Hi {name}, this is {brand}. You left some items in your cart. We've sent you a link with a special offer. Thanks!" |
-| 2.7 | Text-based test endpoint | `POST /agent/chat` endpoint that accepts a message + session ID and returns the agent's response. For testing the full flow without voice. |
-| 2.8 | Conversation guardrails | Agent must: stay on topic, not make up product info, not offer more than 15% discount, gracefully end if customer asks to stop. |
+| 2.1 | ~~LangGraph state machine~~ ✅ | Define the conversation graph: Greeting → Intent Detection → Objection Handling → Discount Offer → Close. Each node is a distinct state. |
+| 2.2 | ~~Prompt engineering~~ ✅ | Write the system prompt grounding the agent in cart data. Agent must only reference actual products in the cart. It must never hallucinate product details. |
+| 2.3 | ~~Tool: Shopify cart lookup~~ ✅ | LangGraph tool that fetches cart contents for the current call session. |
+| 2.4 | ~~Tool: Generate discount~~ ✅ | LangGraph tool that creates a discount code and returns it to the agent. |
+| 2.5 | ~~Tool: Send SMS~~ ✅ | LangGraph tool that sends the cart link + discount code to the customer via SMS (Twilio SMS or Vapi). |
+| 2.6 | ~~Voicemail message template~~ ✅ | A short, fixed voicemail script: "Hi {name}, this is {brand}. You left some items in your cart. We've sent you a link with a special offer. Thanks!" |
+| 2.7 | ~~Text-based test endpoint~~ ✅ | `POST /agent/chat` endpoint that accepts a message + session ID and returns the agent's response. For testing the full flow without voice. |
+| 2.8 | ~~Conversation guardrails~~ ✅ | Agent must: stay on topic, not make up product info, not offer more than 15% discount, gracefully end if customer asks to stop. |
 
 **Deliverable:** A fully functional text chatbot that simulates the entire recovery call. Testable via curl / Postman. Every conversation path exercised.
 

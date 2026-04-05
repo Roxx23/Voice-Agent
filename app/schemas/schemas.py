@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -21,6 +22,23 @@ class AbandonedCartSchema(BaseModel):
     currency: str = "INR"
     abandoned_at: datetime
     shopify_checkout_url: str
+
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str = ""   # empty string on the very first call (triggers greeting)
+    cart_id: str = ""   # required when starting a new session
+
+
+class ChatResponse(BaseModel):
+    session_id: str
+    response: str
+    stage: str
+    intent: str = "unknown"
+    call_ended: bool = False
+    outcome: Optional[str] = None
+    discount_code: Optional[str] = None
+    discount_percent: Optional[int] = None
 
 
 class CallSessionSchema(BaseModel):

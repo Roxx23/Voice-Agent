@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     # App
     app_base_url: str = "http://localhost:8000"
+    brand_name: str = "our store"  # override in .env: BRAND_NAME="Acme Shop"
 
     # Business rules
     discount_tier_1: int = 10

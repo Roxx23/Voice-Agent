@@ -39,24 +39,65 @@ class ShopifyService:
     # 1.4  Cart / customer data retrieval
     # ------------------------------------------------------------------
 
-    async def list_abandoned_checkouts(self, limit: int = 50) -> list[dict]:
-        """List recent abandoned checkouts."""
+    async def list_abandoned_checkouts(self, limit: int = 50, days_back: int = 2) -> list[dict]:
+        """List abandoned checkouts from the last `days_back` days, newest first."""
+        since = (datetime.now(timezone.utc) - timedelta(days=days_back)).isoformat()
         url = f"{self._base}/checkouts.json"
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(url, headers=self._headers, params={"limit": limit})
-        resp.raise_for_status()
-        return resp.json().get("checkouts", [])
+        all_checkouts: list[dict] = []
+        params: dict = {"limit": 250, "created_at_min": since}
 
-    async def get_checkout(self, checkout_token: str) -> dict | None:
+        async with httpx.AsyncClient(timeout=15) as client:
+            while url and len(all_checkouts) < limit:
+                resp = await client.get(url, headers=self._headers, params=params)
+                resp.raise_for_status()
+                page = resp.json().get("checkouts", [])
+                all_checkouts.extend(page)
+
+                link = resp.headers.get("Link", "")
+                next_match = re.search(r'<([^>]+)>;\s*rel="next"', link)
+                if next_match:
+                    url = next_match.group(1)
+                    params = {}
+                else:
+                    break
+
+        # Sort newest first and apply limit
+        all_checkouts.sort(key=lambda c: c.get("created_at", ""), reverse=True)
+        return all_checkouts[:limit]
+
+    async def get_checkout(self, checkout_token_or_id: str) -> dict | None:
         """
-        Fetch a single abandoned checkout by token.
-        Shopify's individual checkout endpoint returns 404 for abandoned checkouts,
-        so we search the list instead.
+        Fetch a single abandoned checkout by token OR numeric id.
+        Only searches within the last 2 days — old checkouts are not eligible for recovery calls.
         """
-        checkouts = await self.list_abandoned_checkouts(limit=250)
-        for c in checkouts:
-            if c.get("token") == checkout_token:
-                return c
+        return await self._search_checkouts(checkout_token_or_id, days_back=2)
+
+    async def _search_checkouts(self, checkout_token_or_id: str, days_back: int | None) -> dict | None:
+        """Paginate through checkouts (optionally filtered by date) and return the match."""
+        url = f"{self._base}/checkouts.json"
+        params: dict = {"limit": 250}
+        if days_back is not None:
+            params["created_at_min"] = (
+                datetime.now(timezone.utc) - timedelta(days=days_back)
+            ).isoformat()
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            while url:
+                resp = await client.get(url, headers=self._headers, params=params)
+                resp.raise_for_status()
+                for c in resp.json().get("checkouts", []):
+                    if (
+                        c.get("token") == checkout_token_or_id
+                        or str(c.get("id")) == str(checkout_token_or_id)
+                    ):
+                        return c
+                link = resp.headers.get("Link", "")
+                next_match = re.search(r'<([^>]+)>;\s*rel="next"', link)
+                if next_match:
+                    url = next_match.group(1)
+                    params = {}
+                else:
+                    break
         return None
 
     async def get_customer_phone(self, customer_id: str) -> str | None:
